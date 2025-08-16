@@ -167,4 +167,4 @@ FRONTEND_URL=your_frontend_url
 ## Contact
 
 Laiba Nadeem - miss.laiba.nadeem@gmail.com
-Project Link: [https://github.com/laibulous/ecommerce-dashboard](https://github.com/laibulous/ecommerce-dashboard)
+Project Link: [https://github.com/laibulous/Ecommerce-dashboard](https://github.com/laibulous/Ecommerce-dashboard)
