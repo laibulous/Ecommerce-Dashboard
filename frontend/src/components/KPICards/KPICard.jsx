@@ -26,15 +26,12 @@ const KPICard = ({
       </div>
       
       <div className="space-y-1">
-        <div className="text-2xl font-bold text-dashboard-text-primary">
-          {prefix}{formattedValue}{suffix}
-        </div>
         <h3 className="text-sm font-medium text-dashboard-text-secondary">
           {title}
         </h3>
-        <p className="text-xs text-dashboard-text-muted">
-          {description}
-        </p>
+        <div className="text-2xl text-center font-bold text-dashboard-text-primary">
+          {prefix}{formattedValue}{suffix}
+        </div>
       </div>
 
       {/* Subtle bottom border for visual enhancement */}
