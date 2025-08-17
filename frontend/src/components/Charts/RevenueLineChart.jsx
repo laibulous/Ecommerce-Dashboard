@@ -7,6 +7,9 @@ const RevenueLineChart = () => {
   const { revenue, loading } = useSelector((state) => state.dashboard);
   const [kpi1Open, setKpi1Open] = useState(false);
   const [kpi2Open, setKpi2Open] = useState(false);
+  const [selectedKpi1, setSelectedKpi1] = useState("KPI1");
+  const [selectedKpi2, setSelectedKpi2] = useState("KPI2");
+  const [selectedBreakdown, setSelectedBreakdown] = useState("weekly"); // default
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   
   // Transform data for the chart
@@ -54,10 +57,6 @@ const RevenueLineChart = () => {
             : 'text-orange-600 hover:bg-orange-50'
         }`}
       >
-        {/* Color dot */}
-        <div className={`w-3 h-3 rounded-full ${
-          color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'
-        }`}></div>
         <span>{label}</span>
         <ChevronDown size={14} className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -103,73 +102,90 @@ const RevenueLineChart = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+      <h1 className="text-gray-700 font-medium">
+        {selectedKpi1} and {selectedKpi2} Over Time
+      </h1>
       {/* Chart Header with Integrated Dropdowns */}
-      <div className="flex items-center justify-between mb-6">
-        {/* Left side - Title and KPI selectors */}
-        <div className="flex items-center space-x-6">
-          <h3 className="text-lg font-medium text-gray-900">Ecommerce Revenue</h3>
-          
-          <div className="flex items-center space-x-1">
-            <DropdownButton
-              label="Ecommerce Revenue"
-              color="blue"
-              isOpen={kpi1Open}
-              setIsOpen={setKpi1Open}
-              options={kpiOptions}
-              onChange={(value) => console.log('KPI1 changed:', value)}
-            />
-            
-            <span className="text-gray-400 font-medium">and</span>
-            
-            <DropdownButton
-              label="Ecommerce Conversion Rate"
-              color="orange"
-              isOpen={kpi2Open}
-              setIsOpen={setKpi2Open}
-              options={kpiOptions}
-              onChange={(value) => console.log('KPI2 changed:', value)}
-            />
-            
-            <span className="text-gray-500 text-sm">Over Time</span>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+
+  {/* Right side - KPI dropdowns + Breakdown */}
+  <div className="flex flex-wrap items-center gap-3">
+    {/* KPI1 */}
+    <DropdownButton
+      label={selectedKpi1}
+      color="blue"
+      isOpen={kpi1Open}
+      setIsOpen={setKpi1Open}
+      options={kpiOptions}
+      onChange={(value) => setSelectedKpi1(value)}
+    />
+
+    {/* KPI2 */}
+    <DropdownButton
+      label={selectedKpi2}
+      color="orange"
+      isOpen={kpi2Open}
+      setIsOpen={setKpi2Open}
+      options={kpiOptions}
+      onChange={(value) => setSelectedKpi2(value)}
+    />
+
+    {/* Date Breakdown */}
+<div className="flex items-center space-x-2 self-start md:self-auto">
+  <span className="text-sm text-gray-500">Date Breakdown</span>
+  <div className="relative">
+    <button
+      onClick={() => setBreakdownOpen(!breakdownOpen)}
+      className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
+    >
+      <span>
+        {breakdownOptions.find((opt) => opt.value === selectedBreakdown)?.label}
+      </span>
+      <ChevronDown
+        size={14}
+        className={`transform transition-transform ${
+          breakdownOpen ? "rotate-180" : ""
+        }`}
+      />
+    </button>
+
+    {breakdownOpen && (
+      <>
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setBreakdownOpen(false)}
+        ></div>
+        <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+          <div className="py-1">
+            {breakdownOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setSelectedBreakdown(option.value); // ✅ update selected value
+                  setBreakdownOpen(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-sm ${
+                  option.value === selectedBreakdown
+                    ? "bg-gray-100 font-medium"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
+      </>
+    )}
+  </div>
+</div>
 
-        {/* Right side - Breakdown selector */}
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Date Breakdown</span>
-          <div className="relative">
-            <button
-              onClick={() => setBreakdownOpen(!breakdownOpen)}
-              className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
-            >
-              <span>Weekly</span>
-              <ChevronDown size={14} className={`transform transition-transform ${breakdownOpen ? 'rotate-180' : ''}`} />
-            </button>
+  </div>
+</div>
 
-            {breakdownOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setBreakdownOpen(false)}></div>
-                <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20">
-                  <div className="py-1">
-                    {breakdownOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          console.log('Breakdown changed:', option.value);
-                          setBreakdownOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+</div>
+
 
       {/* Dual-Axis Line Chart */}
       <div style={{ width: '100%', height: 320 }}>

@@ -51,7 +51,6 @@ const Dashboard = () => {
       filterParams.endDate = filters.dateRange.endDate;
     }
 
-    // Only refetch if we have filter changes
     if (Object.keys(filterParams).length > 0) {
       dispatch(fetchKPIs(filterParams));
       dispatch(fetchRevenue(filterParams));
@@ -73,27 +72,28 @@ const Dashboard = () => {
   }
 
   return (
-    // New Dashboard Layout Structure
-    <div className="min-h-screen bg-gray-50 p-6">
-    <DashboardHeader />
-    <KPICards />
-    
-    {/* MAIN ROW: 2/3 + 1/3 split */}
-    <div className="grid grid-cols-3 gap-6 mb-6">
-        <div className="col-span-2">
-        <RevenueLineChart /> {/* NEW: The missing main chart */}
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <DashboardHeader />
+      <KPICards />
+      
+      {/* MAIN ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Revenue takes full width on mobile, 2/3 on desktop */}
+        <div className="lg:col-span-2">
+          <RevenueLineChart />
         </div>
-        <div className="col-span-1">
-        <ProductChart /> {/* EXISTING: But needs redesign */}
+        {/* Product Chart takes full width on mobile, 1/3 on desktop */}
+        <div className="lg:col-span-1">
+          <ProductChart />
         </div>
-    </div>
-    
-    {/* BOTTOM ROW: 1/3 + 1/3 + 1/3 */}
-    <div className="grid grid-cols-3 gap-6">
-        <MarketingChart /> {/* EXISTING: But needs redesign */}
-        <StateMap />        {/* NEEDS REPLACEMENT: Bar chart → US Map */}
-        <DeviceChart />     {/* EXISTING: But needs enhancement */}
-    </div>
+      </div>
+      
+      {/* BOTTOM ROW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MarketingChart />
+        <StateMap />
+        <DeviceChart />
+      </div>
     </div>
   );
 };

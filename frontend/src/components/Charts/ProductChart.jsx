@@ -67,51 +67,43 @@ const ProductChart = () => {
       </div>
 
       <div className="h-80 p-4">
-        <div className="space-y-6">
+        <div className="space-y-3">
           {sortedProducts.map((product, index) => {
             const revenueWidth = (product.revenue / maxRevenue) * 100;
             const conversionWidth = (product.conversionRate / 2) * 100; // Scale conversion rate (assuming max ~2%)
             
             return (
-              <div key={product.product} className="space-y-1">
-                <div className="text-sm font-medium text-gray-700 mb-1">
+              <div key={product.product} className="space-y-0.5">
+                <div className="text-xs font-medium text-gray-600 mb-1">
                   {product.product}
                 </div>
                 
                 {/* Revenue Bar */}
-                <div className="relative">
+                <div className="relative mb-0.5">
                   <div 
-                    className="h-6 bg-slate-700 rounded-sm relative"
+                    className="h-3 bg-slate-700 rounded-sm"
                     style={{ width: `${revenueWidth}%` }}
-                  >
-                    <span className="absolute right-2 top-0 h-full flex items-center text-white text-xs font-medium">
-                      {formatCurrency(product.revenue, false)}
-                    </span>
-                  </div>
+                  />
+                  <span className="absolute top-0 text-xs font-medium text-gray-700 ml-1" 
+                        style={{ left: `${revenueWidth}%` }}>
+                    {formatCurrency(product.revenue, false)}
+                  </span>
                 </div>
                 
                 {/* Conversion Rate Bar */}
                 <div className="relative">
                   <div 
-                    className="h-4 bg-orange-500 rounded-sm relative"
+                    className="h-3 bg-orange-500 rounded-sm"
                     style={{ width: `${conversionWidth}%` }}
-                  >
-                    <span className="absolute right-2 top-0 h-full flex items-center text-white text-xs font-medium">
-                      {product.conversionRate}%
-                    </span>
-                  </div>
+                  />
+                  <span className="absolute top-0 text-xs font-medium text-orange-600 ml-1" 
+                        style={{ left: `${conversionWidth}%` }}>
+                    {product.conversionRate}%
+                  </span>
                 </div>
               </div>
             );
           })}
-        </div>
-        
-        {/* Y-axis labels for reference */}
-        <div className="mt-4 flex justify-between text-xs text-gray-500">
-          <span>0</span>
-          <span className="text-right">
-            Revenue: {formatCurrency(maxRevenue, false)} | Conversion Rate: 2%
-          </span>
         </div>
       </div>
     </div>

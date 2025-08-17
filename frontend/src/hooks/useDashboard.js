@@ -9,7 +9,7 @@ import {
   fetchDevices,
 } from '../store/slices/dashboardSlice';
 
-export const useDashboardData = () => {
+export const useDashboard = () => {
   const dispatch = useDispatch();
   const filters = useSelector((state) => state.filters);
   const dashboardData = useSelector((state) => state.dashboard);

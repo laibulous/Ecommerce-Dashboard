@@ -1,72 +1,45 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from 'recharts';
-import { formatCurrency, formatPercentage } from '../../utils/formatters';
-
-const DEVICE_COLORS = {
-  Desktop: '#3b82f6',
-  Mobile: '#10b981', 
-  Tablet: '#f59e0b',
-};
+import { Monitor, Smartphone, Tablet } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatters';
 
 const DeviceChart = () => {
   const { devices, loading, error } = useSelector((state) => state.dashboard);
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 mb-2">{data.device}</p>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Revenue:</span> {formatCurrency(data.revenue)}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Conversion:</span> {data.conversionRate}%
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Share:</span> {data.percentage}%
-          </p>
-        </div>
-      );
+  // Device icons mapping
+  const DeviceIcon = ({ device, className }) => {
+    switch (device) {
+      case 'Desktop':
+        return <Monitor className={className} />;
+      case 'Mobile':
+        return <Smartphone className={className} />;
+      case 'Tablet':
+        return <Tablet className={className} />;
+      default:
+        return <Monitor className={className} />;
     }
-    return null;
   };
 
-  const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  // Sort devices by revenue (descending)
+  const sortedDevices = React.useMemo(() => {
+    if (!devices || !Array.isArray(devices)) return [];
+    
+    return [...devices].sort((a, b) => b.revenue - a.revenue);
+  }, [devices]);
 
-    return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central"
-        fontSize={12}
-        fontWeight="bold"
-      >
-        {`${percentage}%`}
-      </text>
-    );
-  };
+  // Find max values for scaling
+  const maxRevenue = Math.max(...(sortedDevices.map(d => d.revenue) || [0]));
+  const maxConversion = Math.max(...(sortedDevices.map(d => d.conversionRate) || [0]));
+
+  // Calculate total revenue
+  const totalRevenue = sortedDevices.reduce((sum, device) => sum + device.revenue, 0);
 
   if (loading.devices) {
     return (
       <div className="chart-container">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-dashboard-text-primary">
-            Device Performance
+            Ecommerce Revenue and Conversion Rate by Device
           </h2>
         </div>
         <div className="h-80 flex items-center justify-center">
@@ -81,7 +54,7 @@ const DeviceChart = () => {
       <div className="chart-container">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-dashboard-text-primary">
-            Device Performance
+            Ecommerce Revenue and Conversion Rate by Device
           </h2>
         </div>
         <div className="h-80 flex items-center justify-center">
@@ -94,78 +67,70 @@ const DeviceChart = () => {
     );
   }
 
-  // Calculate percentages
-  const totalRevenue = devices?.reduce((sum, device) => sum + device.revenue, 0) || 0;
-  const chartData = devices?.map(device => ({
-    ...device,
-    percentage: ((device.revenue / totalRevenue) * 100).toFixed(1)
-  })) || [];
-
   return (
     <div className="chart-container">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-dashboard-text-primary">
-          Device Performance
+          Ecommerce Revenue and Conversion Rate by Device
         </h2>
-        <div className="text-sm text-dashboard-text-secondary">
-          Total Revenue: {formatCurrency(totalRevenue)}
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart */}
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={CustomLabel}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="revenue"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={DEVICE_COLORS[entry.device] || '#8884d8'} 
+      <div className="h-48 p-4">
+        <div className="space-y-6">
+          {sortedDevices.map((device, index) => {
+            const revenueWidth = (device.revenue / maxRevenue) * 60; // Scale to 60% of container
+            const conversionWidth = (device.conversionRate / maxConversion) * 40; // Scale to 40% of container
+            const sharePercentage = ((device.revenue / totalRevenue) * 100).toFixed(1);
+            
+            return (
+              <div key={device.device} className="flex items-center space-x-3">
+                {/* Device Icon - Left Side */}
+                <div className="w-8 flex justify-center flex-shrink-0">
+                  <DeviceIcon 
+                    device={device.device} 
+                    className="w-5 h-5 text-gray-600" 
                   />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Device Stats */}
-        <div className="space-y-4">
-          {chartData.map((device, index) => (
-            <div key={device.device} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div 
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: DEVICE_COLORS[device.device] }}
-                ></div>
-                <div>
-                  <p className="font-medium text-dashboard-text-primary">{device.device}</p>
-                  <p className="text-sm text-dashboard-text-secondary">
-                    {device.conversionRate}% conversion
-                  </p>
+                </div>
+                
+                {/* Combined Bar Container */}
+                <div className="flex-1 relative h-6">
+                  {/* Revenue Bar (Green/Teal) */}
+                  <div 
+                    className="absolute top-0 h-6 bg-teal-500 rounded-sm flex items-center justify-end pr-2"
+                    style={{ width: `${revenueWidth}%` }}
+                  >
+                    <span className="text-xs font-medium text-white">
+                      {formatCurrency(device.revenue, false)}
+                    </span>
+                  </div>
+                  
+                  {/* Conversion Rate Bar (Orange) - Positioned after revenue bar */}
+                  <div 
+                    className="absolute top-0 h-6 bg-orange-400 rounded-sm flex items-center justify-end pr-2"
+                    style={{ 
+                      width: `${conversionWidth}%`, 
+                      left: `${revenueWidth + 2}%` 
+                    }}
+                  >
+                    <span className="text-xs font-medium text-white">
+                      {device.conversionRate}%
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-medium text-dashboard-text-primary">
-                  {formatCurrency(device.revenue)}
-                </p>
-                <p className="text-sm text-dashboard-text-secondary">
-                  {device.percentage}% share
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      </div>
+      {/* Bottom Legend */}
+      <div className="mt-4 flex justify-center space-x-8 text-sm">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-3 bg-teal-500 rounded-sm"></div>
+          <span className="text-gray-600">Ecommerce Revenue</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-3 bg-orange-400 rounded-sm"></div>
+          <span className="text-gray-600">Ecommerce Conversion Rate</span>
         </div>
       </div>
     </div>
