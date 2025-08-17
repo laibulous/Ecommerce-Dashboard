@@ -9,7 +9,7 @@ import {
   fetchDevices 
 } from '../../store/slices/dashboardSlice';
 import KPICards from '../KPICards/KPICards';
-import RevenueChart from '../Charts/RevenueChart';
+import RevenueLineChart from '../Charts/RevenueLineChart';
 import ProductChart from '../Charts/ProductChart';
 import MarketingChart from '../Charts/MarketingChart';
 import DeviceChart from '../Charts/DeviceChart';
@@ -73,35 +73,27 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dashboard-bg">
-      {/* Header */}
-      <DashboardHeader />
-      
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Cards */}
-        <KPICards />
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Revenue Chart - Full Width */}
-          <div className="lg:col-span-2">
-            <RevenueChart />
-          </div>
-
-          {/* Product Performance */}
-          <ProductChart />
-
-          {/* Marketing Channels */}
-          <MarketingChart />
-
-          {/* Device Performance */}
-          <DeviceChart />
-
-          {/* State Map */}
-          <StateMap />
+    // New Dashboard Layout Structure
+    <div className="min-h-screen bg-gray-50 p-6">
+    <DashboardHeader />
+    <KPICards />
+    
+    {/* MAIN ROW: 2/3 + 1/3 split */}
+    <div className="grid grid-cols-3 gap-6 mb-6">
+        <div className="col-span-2">
+        <RevenueLineChart /> {/* NEW: The missing main chart */}
         </div>
-      </div>
+        <div className="col-span-1">
+        <ProductChart /> {/* EXISTING: But needs redesign */}
+        </div>
+    </div>
+    
+    {/* BOTTOM ROW: 1/3 + 1/3 + 1/3 */}
+    <div className="grid grid-cols-3 gap-6">
+        <MarketingChart /> {/* EXISTING: But needs redesign */}
+        <StateMap />        {/* NEEDS REPLACEMENT: Bar chart → US Map */}
+        <DeviceChart />     {/* EXISTING: But needs enhancement */}
+    </div>
     </div>
   );
 };

@@ -1,45 +1,26 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import { formatCurrency } from '../../utils/formatters';
 
 const ProductChart = () => {
   const { products, loading, error } = useSelector((state) => state.dashboard);
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              <span className="font-medium">{entry.name}:</span>{' '}
-              {entry.dataKey === 'revenue'
-                ? formatCurrency(entry.value)
-                : `${entry.value}%`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  // Sort products by revenue (descending)
+  const sortedProducts = React.useMemo(() => {
+    if (!products || !Array.isArray(products)) return [];
+    
+    return [...products].sort((a, b) => b.revenue - a.revenue);
+  }, [products]);
+
+  // Find max revenue for scaling
+  const maxRevenue = Math.max(...(sortedProducts.map(p => p.revenue) || [0]));
 
   if (loading.products) {
     return (
       <div className="chart-container">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-dashboard-text-primary">
-            Product Performance
+            Ecommerce Revenue and Ecommerce Conversion Rate by Product
           </h2>
         </div>
         <div className="h-80 flex items-center justify-center">
@@ -54,7 +35,7 @@ const ProductChart = () => {
       <div className="chart-container">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-dashboard-text-primary">
-            Product Performance
+            Ecommerce Revenue and Ecommerce Conversion Rate by Product
           </h2>
         </div>
         <div className="h-80 flex items-center justify-center">
@@ -71,63 +52,67 @@ const ProductChart = () => {
     <div className="chart-container">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-dashboard-text-primary">
-          Product Performance
+          Ecommerce Revenue and Ecommerce Conversion Rate by Product
         </h2>
         <div className="flex items-center space-x-4 text-sm text-dashboard-text-secondary">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-slate-700 rounded-full"></div>
             <span>Revenue</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
             <span>Conversion Rate</span>
           </div>
         </div>
       </div>
 
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={products} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="product" 
-              stroke="#64748b"
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis 
-              yAxisId="revenue"
-              stroke="#64748b"
-              fontSize={12}
-              tickLine={false}
-              tickFormatter={(value) => formatCurrency(value, false)}
-            />
-            <YAxis 
-              yAxisId="conversion"
-              orientation="right"
-              stroke="#64748b"
-              fontSize={12}
-              tickLine={false}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar
-              yAxisId="revenue"
-              dataKey="revenue"
-              fill="#3b82f6"
-              name="Revenue"
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              yAxisId="conversion"
-              dataKey="conversionRate"
-              fill="#8b5cf6"
-              name="Conversion Rate"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="h-80 p-4">
+        <div className="space-y-6">
+          {sortedProducts.map((product, index) => {
+            const revenueWidth = (product.revenue / maxRevenue) * 100;
+            const conversionWidth = (product.conversionRate / 2) * 100; // Scale conversion rate (assuming max ~2%)
+            
+            return (
+              <div key={product.product} className="space-y-1">
+                <div className="text-sm font-medium text-gray-700 mb-1">
+                  {product.product}
+                </div>
+                
+                {/* Revenue Bar */}
+                <div className="relative">
+                  <div 
+                    className="h-6 bg-slate-700 rounded-sm relative"
+                    style={{ width: `${revenueWidth}%` }}
+                  >
+                    <span className="absolute right-2 top-0 h-full flex items-center text-white text-xs font-medium">
+                      {formatCurrency(product.revenue, false)}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Conversion Rate Bar */}
+                <div className="relative">
+                  <div 
+                    className="h-4 bg-orange-500 rounded-sm relative"
+                    style={{ width: `${conversionWidth}%` }}
+                  >
+                    <span className="absolute right-2 top-0 h-full flex items-center text-white text-xs font-medium">
+                      {product.conversionRate}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* Y-axis labels for reference */}
+        <div className="mt-4 flex justify-between text-xs text-gray-500">
+          <span>0</span>
+          <span className="text-right">
+            Revenue: {formatCurrency(maxRevenue, false)} | Conversion Rate: 2%
+          </span>
+        </div>
       </div>
     </div>
   );
