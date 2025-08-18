@@ -1,30 +1,53 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { ChevronDown } from 'lucide-react';
+import { setBreakdown } from '../../store/slices/filtersSlice';
 
 const RevenueLineChart = () => {
+  const dispatch = useDispatch();
   const { revenue, loading } = useSelector((state) => state.dashboard);
+  const { breakdown } = useSelector((state) => state.filters);
+  
+  // Local UI state for dropdowns
   const [kpi1Open, setKpi1Open] = useState(false);
   const [kpi2Open, setKpi2Open] = useState(false);
-  const [selectedKpi1, setSelectedKpi1] = useState("KPI1");
-  const [selectedKpi2, setSelectedKpi2] = useState("KPI2");
-  const [selectedBreakdown, setSelectedBreakdown] = useState("weekly"); // default
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   
-  // Transform data for the chart
-  const chartData = revenue?.map(item => ({
-    ...item,
-    // Format date for display (Feb 1, Mar 1, etc.)
-    dateFormatted: new Date(item.date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    }),
-    // Convert revenue to thousands
-    revenueK: item.revenue / 1000,
-    // Conversion rate as decimal for right axis
-    conversionRateDecimal: item.conversionRate
-  })) || [];
+  // Chart configuration state (these control what's displayed)
+  const [selectedKpi1, setSelectedKpi1] = useState("ecommerceRevenue");
+  const [selectedKpi2, setSelectedKpi2] = useState("ecommerceConversionRate");
+  
+  // Get current breakdown for revenue chart from Redux
+  const selectedBreakdown = breakdown.revenue || 'weekly';
+  
+  // Transform data for the chart based on selected KPIs
+  const chartData = revenue?.map(item => {
+    const baseData = {
+      ...item,
+      dateFormatted: new Date(item.date).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      }),
+    };
+
+    // Add data for selected KPIs
+    if (selectedKpi1 === 'ecommerceRevenue') {
+      baseData.kpi1Value = item.revenue / 1000; // Convert to K
+    } else if (selectedKpi1 === 'ecommerceConversionRate') {
+      baseData.kpi1Value = item.conversionRate;
+    }
+    // Add more KPI mappings as needed
+
+    if (selectedKpi2 === 'ecommerceRevenue') {
+      baseData.kpi2Value = item.revenue / 1000;
+    } else if (selectedKpi2 === 'ecommerceConversionRate') {
+      baseData.kpi2Value = item.conversionRate;
+    }
+    // Add more KPI mappings as needed
+
+    return baseData;
+  }) || [];
 
   const kpiOptions = [
     { value: 'ecommerceRevenue', label: 'Ecommerce Revenue' },
@@ -39,6 +62,11 @@ const RevenueLineChart = () => {
     { value: 'monthly', label: 'Monthly' },
     { value: 'daily', label: 'Daily' },
   ];
+
+  // Handle breakdown change - update Redux state
+  const handleBreakdownChange = (value) => {
+    dispatch(setBreakdown({ category: 'revenue', value }));
+  };
 
   const DropdownButton = ({ 
     label, 
@@ -85,11 +113,9 @@ const RevenueLineChart = () => {
     </div>
   );
 
-  // Custom tick formatter for left Y-axis (Revenue)
-  const formatRevenueAxis = (value) => `${value}K`;
-  
-  // Custom tick formatter for right Y-axis (Conversion Rate)  
-  const formatConversionAxis = (value) => value.toFixed(2);
+  // Get display labels for current selections
+  const kpi1Label = kpiOptions.find(opt => opt.value === selectedKpi1)?.label || selectedKpi1;
+  const kpi2Label = kpiOptions.find(opt => opt.value === selectedKpi2)?.label || selectedKpi2;
 
   if (loading.revenue) {
     return (
@@ -102,90 +128,85 @@ const RevenueLineChart = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-      <h1 className="text-gray-700 font-medium">
-        {selectedKpi1} and {selectedKpi2} Over Time
+      <h1 className="text-gray-700 font-medium mb-4">
+        {kpi1Label} and {kpi2Label} Over Time
       </h1>
+      
       {/* Chart Header with Integrated Dropdowns */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        {/* Right side - KPI dropdowns + Breakdown */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* KPI1 */}
+          <DropdownButton
+            label={kpi1Label}
+            color="blue"
+            isOpen={kpi1Open}
+            setIsOpen={setKpi1Open}
+            options={kpiOptions}
+            onChange={setSelectedKpi1}
+          />
 
-  {/* Right side - KPI dropdowns + Breakdown */}
-  <div className="flex flex-wrap items-center gap-3">
-    {/* KPI1 */}
-    <DropdownButton
-      label={selectedKpi1}
-      color="blue"
-      isOpen={kpi1Open}
-      setIsOpen={setKpi1Open}
-      options={kpiOptions}
-      onChange={(value) => setSelectedKpi1(value)}
-    />
+          {/* KPI2 */}
+          <DropdownButton
+            label={kpi2Label}
+            color="orange"
+            isOpen={kpi2Open}
+            setIsOpen={setKpi2Open}
+            options={kpiOptions}
+            onChange={setSelectedKpi2}
+          />
 
-    {/* KPI2 */}
-    <DropdownButton
-      label={selectedKpi2}
-      color="orange"
-      isOpen={kpi2Open}
-      setIsOpen={setKpi2Open}
-      options={kpiOptions}
-      onChange={(value) => setSelectedKpi2(value)}
-    />
-
-    {/* Date Breakdown */}
-<div className="flex items-center space-x-2 self-start md:self-auto">
-  <span className="text-sm text-gray-500">Date Breakdown</span>
-  <div className="relative">
-    <button
-      onClick={() => setBreakdownOpen(!breakdownOpen)}
-      className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
-    >
-      <span>
-        {breakdownOptions.find((opt) => opt.value === selectedBreakdown)?.label}
-      </span>
-      <ChevronDown
-        size={14}
-        className={`transform transition-transform ${
-          breakdownOpen ? "rotate-180" : ""
-        }`}
-      />
-    </button>
-
-    {breakdownOpen && (
-      <>
-        <div
-          className="fixed inset-0 z-10"
-          onClick={() => setBreakdownOpen(false)}
-        ></div>
-        <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20">
-          <div className="py-1">
-            {breakdownOptions.map((option) => (
+          {/* Date Breakdown - Now connected to Redux */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">Date Breakdown</span>
+            <div className="relative">
               <button
-                key={option.value}
-                onClick={() => {
-                  setSelectedBreakdown(option.value); // ✅ update selected value
-                  setBreakdownOpen(false);
-                }}
-                className={`block w-full text-left px-4 py-2 text-sm ${
-                  option.value === selectedBreakdown
-                    ? "bg-gray-100 font-medium"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                onClick={() => setBreakdownOpen(!breakdownOpen)}
+                className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
               >
-                {option.label}
+                <span>
+                  {breakdownOptions.find((opt) => opt.value === selectedBreakdown)?.label}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`transform transition-transform ${
+                    breakdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-            ))}
+
+              {breakdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setBreakdownOpen(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                    <div className="py-1">
+                      {breakdownOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            handleBreakdownChange(option.value); // ✅ Now updates Redux
+                            setBreakdownOpen(false);
+                          }}
+                          className={`block w-full text-left px-4 py-2 text-sm ${
+                            option.value === selectedBreakdown
+                              ? "bg-gray-100 font-medium"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </>
-    )}
-  </div>
-</div>
-
-  </div>
-</div>
-
-</div>
-
+      </div>
 
       {/* Dual-Axis Line Chart */}
       <div style={{ width: '100%', height: 320 }}>
@@ -201,44 +222,42 @@ const RevenueLineChart = () => {
               tick={{ fontSize: 12, fill: '#6b7280' }}
             />
             
-            {/* Left Y-axis for Revenue */}
+            {/* Left Y-axis for KPI1 */}
             <YAxis 
-              yAxisId="revenue"
+              yAxisId="kpi1"
               orientation="left"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#6b7280' }}
-              tickFormatter={formatRevenueAxis}
               domain={[0, 'dataMax']}
             />
             
-            {/* Right Y-axis for Conversion Rate */}
+            {/* Right Y-axis for KPI2 */}
             <YAxis 
-              yAxisId="conversion"
+              yAxisId="kpi2"
               orientation="right"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#6b7280' }}
-              tickFormatter={formatConversionAxis}
               domain={[0, 'dataMax']}
             />
             
-            {/* Revenue Line (Blue) */}
+            {/* KPI1 Line (Blue) */}
             <Line
-              yAxisId="revenue"
+              yAxisId="kpi1"
               type="monotone"
-              dataKey="revenueK"
+              dataKey="kpi1Value"
               stroke="#3b82f6"
               strokeWidth={3}
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
             />
             
-            {/* Conversion Rate Line (Orange) */}
+            {/* KPI2 Line (Orange) */}
             <Line
-              yAxisId="conversion"
+              yAxisId="kpi2"
               type="monotone"
-              dataKey="conversionRateDecimal"
+              dataKey="kpi2Value"
               stroke="#f97316"
               strokeWidth={3}
               dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
